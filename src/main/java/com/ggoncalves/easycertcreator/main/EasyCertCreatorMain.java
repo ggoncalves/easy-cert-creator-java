@@ -1,4 +1,4 @@
-package com.ggoncalves.easycertcreator;
+package com.ggoncalves.easycertcreator.main;
 
 import lombok.NoArgsConstructor;
 

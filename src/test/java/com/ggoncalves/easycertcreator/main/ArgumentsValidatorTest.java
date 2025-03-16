@@ -1,4 +1,4 @@
-package com.ggoncalves.easycertcreator;
+package com.ggoncalves.easycertcreator.main;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;

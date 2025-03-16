@@ -1,6 +1,5 @@
-package com.ggoncalves.easycertcreator;
+package com.ggoncalves.easycertcreator.main;
 
-import org.apache.commons.cli.ParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
