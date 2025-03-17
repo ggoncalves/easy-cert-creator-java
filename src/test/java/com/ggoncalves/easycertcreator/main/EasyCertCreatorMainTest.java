@@ -11,7 +11,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class EasyCertCreatorMainTest {
   @Mock
-  private ArgumentsValidator validator;
+  private CommandListArgsProcessor validator;
 
   @InjectMocks
   private EasyCertCreatorMain main;
@@ -20,6 +20,6 @@ class EasyCertCreatorMainTest {
   void shouldValidateArguments() {
     String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
     main.execute(args);
-    verify(validator).isValidArguments(args);
+    verify(validator).process(args);
   }
 }

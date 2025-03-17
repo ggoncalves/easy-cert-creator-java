@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 class ArgumentsValidatorTest {
 
   @Spy
-  private ArgumentsValidator argumentsValidator;
+  private CommandListArgsProcessor argumentsValidator;
 
   // System.err and out replacements
   private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
@@ -64,7 +64,7 @@ class ArgumentsValidatorTest {
 
     prepareArgumentsValidatorReturns(mockFileValid, mockFileValid, mockDirectoryValid);
 
-    assertThat(argumentsValidator.isValidArguments(args)).isTrue();
+    assertThat(argumentsValidator.process(args)).isTrue();
     assertThat(outContent.toString()).isEmpty();
   }
 
@@ -80,7 +80,7 @@ class ArgumentsValidatorTest {
     File mockDirectoryValid = prepareValidDirectory();
 
     prepareArgumentsValidatorReturns(mockFileNotFound, mockFileValid, mockDirectoryValid);
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_DOES_NOT_EXIST_MESSAGE);
   }
 
@@ -96,7 +96,7 @@ class ArgumentsValidatorTest {
     File mockDirectoryValid = prepareValidDirectory();
 
     prepareArgumentsValidatorReturns(mockFileValid, mockFileNotAnActualFile, mockDirectoryValid);
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_DOES_NOT_A_FILE_MESSAGE);
   }
 
@@ -112,7 +112,7 @@ class ArgumentsValidatorTest {
     File mockDirectoryValid = prepareValidDirectory();
 
     prepareArgumentsValidatorReturns(mockFileValid, mockFileNotAnActualFile, mockDirectoryValid);
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_CANNOT_READ_FILE);
   }
 
@@ -127,7 +127,7 @@ class ArgumentsValidatorTest {
     File mockDirectoryNotExists = prepareMockDirectory(false, true, true);
 
     prepareArgumentsValidatorReturns(mockFileValid, mockFileValid, mockDirectoryNotExists);
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_DOES_NOT_EXIST_MESSAGE);
   }
 
@@ -142,7 +142,7 @@ class ArgumentsValidatorTest {
     File mockDirectoryNotAnActualDirectory = prepareMockDirectory(true, false, true);
 
     prepareArgumentsValidatorReturns(mockFileValid, mockFileValid, mockDirectoryNotAnActualDirectory);
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_MUST_BE_A_DIRECTORY_MESSAGE);
   }
 
@@ -157,7 +157,7 @@ class ArgumentsValidatorTest {
     File mockDirectoryNotAnActualDirectory = prepareMockDirectory(true, true, false);
 
     prepareArgumentsValidatorReturns(mockFileValid, mockFileValid, mockDirectoryNotAnActualDirectory);
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_CANNOT_WRITE_TO_DIRECTORY);
   }
 
@@ -168,7 +168,7 @@ class ArgumentsValidatorTest {
         "-i", VALID_INFO
         // missing output argument
     };
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_MISSING_REQUIRED_OPTION);
   }
 
@@ -179,7 +179,7 @@ class ArgumentsValidatorTest {
         "-i", VALID_INFO,
         "-o", VALID_OUTPUT
     };
-    assertThat(argumentsValidator.isValidArguments(args)).isFalse();
+    assertThat(argumentsValidator.process(args)).isFalse();
     assertError(EXPECTED_UNRECOGNIZED_OPTION);
   }
 

@@ -4,3 +4,38 @@ Orinnova Lego Serious Play
 João Silva
 Maria Santos
 Pedro Oliveira
+
+
+// Above section is the old file format
+// Software must be changed to handle the scenarios bellow
+
+
+EasyCertCreator.prefixFileName: certified_
+
+// For Certification
+
+###
+# programName:
+# durationHours:
+# programDate:
+# list - studentName:
+###
+
+Orinnova Lego Serious Play
+10
+24/11/2024
+João Silva
+Maria Santos
+Pedro Oliveira
+
+// For Badge
+
+###
+# firstName-lastName-talent1,talent2,talent3,talent4,talent5
+###
+
+Milena-Assis de Oliveira-Analítico,Autoafirmação,Foco,Crença,Realização
+
+
+
+

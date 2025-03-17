@@ -5,18 +5,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EasyCertCreatorMain {
 
-  private ArgumentsValidator validator;
+  private CommandListArgsProcessor validator;
 
-  public EasyCertCreatorMain(ArgumentsValidator validator) {
+  public EasyCertCreatorMain(CommandListArgsProcessor validator) {
     this.validator = validator;
   }
 
   void execute(String[] args) {
-    validator.isValidArguments(args);
+    validator.process(args);
   }
 
   public static void main(String[] args) {
-    EasyCertCreatorMain main = new EasyCertCreatorMain(ArgumentsValidator.builder().build());
+    EasyCertCreatorMain main = new EasyCertCreatorMain(CommandListArgsProcessor.builder().build());
     main.execute(args);
   }
 }
