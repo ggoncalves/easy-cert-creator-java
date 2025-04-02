@@ -1,6 +1,9 @@
 package com.ggoncalves.easycertcreator.di;
 
-import com.ggoncalves.easycertcreator.main.CommandListArgsProcessor;
+import com.ggoncalves.easycertcreator.main.CertificateArgumentsProcessor;
+import com.ggoncalves.easycertcreator.main.CertificateCommandOptions;
+import com.ggoncalves.easycertcreator.main.CertificateFileValidator;
+import com.ggoncalves.ggutils.console.cli.CommandProcessor;
 import com.ggoncalves.ggutils.console.exception.ExceptionHandler;
 import com.ggoncalves.ggutils.console.validation.FilePathValidator;
 import dagger.Module;
@@ -36,7 +39,14 @@ public class AppModule {
 
   @Provides
   @Singleton
-  public CommandListArgsProcessor provideCommandListArgsProcessor(FilePathValidator filePathValidator) {
-    return new CommandListArgsProcessor(filePathValidator);
+  public CommandProcessor provideCommandProcessor(FilePathValidator filePathValidator) {
+    return new CommandProcessor(filePathValidator);
+  }
+
+  @Provides
+  @Singleton
+  public CertificateArgumentsProcessor provideCommandListArgsProcessor(CertificateCommandOptions certificateCommandOptions
+      , CertificateFileValidator certificateFileValidator) {
+    return new CertificateArgumentsProcessor(certificateCommandOptions, certificateFileValidator);
   }
 }

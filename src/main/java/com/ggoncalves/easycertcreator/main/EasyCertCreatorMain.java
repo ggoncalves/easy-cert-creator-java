@@ -4,31 +4,39 @@ import com.ggoncalves.easycertcreator.di.AppComponent;
 import com.ggoncalves.easycertcreator.di.AppModule;
 import com.ggoncalves.easycertcreator.di.DaggerAppComponent;
 import com.ggoncalves.ggutils.console.exception.ExceptionHandler;
+import com.google.common.annotations.VisibleForTesting;
 
 import javax.inject.Inject;
 
 public class EasyCertCreatorMain {
 
   private final String[] args;
-  private final CommandListArgsProcessor commandProcessor;
+  private final CertificateArgumentsProcessor commandListArgsProcessor;
   private final ExceptionHandler exceptionHandler;
 
   @Inject
-  public EasyCertCreatorMain(String[] args, CommandListArgsProcessor validator, ExceptionHandler exceptionHandler) {
+  public EasyCertCreatorMain(String[] args, CertificateArgumentsProcessor commandListArgsProcessor, ExceptionHandler exceptionHandler) {
     this.args = args;
-    this.commandProcessor = validator;
+    this.commandListArgsProcessor = commandListArgsProcessor;
     this.exceptionHandler = exceptionHandler;
   }
 
   void execute() {
-    commandProcessor.process(args);
+    commandListArgsProcessor.process(args);
   }
 
-  public static void main(String[] args) {
-    AppComponent appComponent = DaggerAppComponent.builder()
+  @VisibleForTesting
+  static AppComponent createAppComponent(String[] args) {
+    return DaggerAppComponent.builder()
         .appModule(new AppModule(args))
         .build();
+  }
+
+
+  public static void main(String[] args) {
+    AppComponent appComponent = createAppComponent(args);
     EasyCertCreatorMain main = appComponent.getMainApp();
     main.execute();
+
   }
 }
