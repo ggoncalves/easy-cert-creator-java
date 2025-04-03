@@ -22,7 +22,12 @@ public class EasyCertCreatorMain {
   }
 
   void execute() {
-    commandListArgsProcessor.process(args);
+    try {
+      commandListArgsProcessor.process(args);
+    }
+    catch (Throwable e) {
+      exceptionHandler.handle(e);
+    }
   }
 
   @VisibleForTesting

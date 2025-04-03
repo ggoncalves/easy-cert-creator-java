@@ -2,8 +2,6 @@ package com.ggoncalves.easycertcreator.main;
 
 import com.ggoncalves.easycertcreator.util.TestEnvironmentSilencer;
 import com.ggoncalves.ggutils.console.cli.CommandProcessor;
-import com.ggoncalves.ggutils.console.exception.FilePermissionException;
-import com.ggoncalves.ggutils.console.exception.InvalidFileException;
 import lombok.SneakyThrows;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
@@ -16,9 +14,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.stream.Stream;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -101,7 +98,7 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
   @SneakyThrows
   @DisplayName("Should throw InvalidFileException during validation and print message")
   @ParameterizedTest
-  @MethodSource("exceptionProvider")
+  @MethodSource("com.ggoncalves.easycertcreator.util.TestUtilFactory#allFileExceptionsProvider")
   void shouldThrowInvalidFileExceptionDuringValidationAndPrintMessage(Exception exception) {
     // Given
     String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
@@ -113,19 +110,13 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
         .validateFiles(commandLine);
 
     // When
-    certificateArgumentsProcessor.process(args);
+    assertThatThrownBy(() ->
+        certificateArgumentsProcessor.process(args)).isInstanceOf(exception.getClass());
 
     // Then
     verify(commandProcessor).parseArgs(args);
     verify(certificateFileValidator).validateFiles(commandLine);
-    verify(commandProcessor).printHelp("EasyCertCreator");
-  }
-
-  static Stream<Exception> exceptionProvider() {
-    return Stream.of(
-        new InvalidFileException("InvalidFileException"),
-        new FilePermissionException("FilePermissionException")
-                    );
+//    verify(commandProcessor).printHelp("EasyCertCreator");
   }
 
 }

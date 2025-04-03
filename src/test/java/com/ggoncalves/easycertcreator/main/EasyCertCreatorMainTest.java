@@ -5,12 +5,15 @@ import com.ggoncalves.ggutils.console.exception.ExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -46,6 +49,24 @@ class EasyCertCreatorMainTest {
     verifyNoInteractions(exceptionHandler);
   }
 
+  @DisplayName("Should call exception handler ")
+  @ParameterizedTest
+  @MethodSource("com.ggoncalves.easycertcreator.util.TestUtilFactory#allFileExceptionsProvider")
+  void shouldCallExceptionHandler(Exception exception) {
+    // Given
+    String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
+
+    doThrow(exception).when(commandListArgsProcessor).process(args);
+    main = newInstance(args);
+
+    // When
+    main.execute();
+
+    // Then
+    verify(commandListArgsProcessor).process(args);
+    verify(exceptionHandler).handle(exception);
+  }
+
   @DisplayName("ShouldExecuteMainProperly")
   @Test
   void shouldExecuteMainProperly() {
@@ -71,8 +92,6 @@ class EasyCertCreatorMainTest {
       verify(main).execute();
     }
   }
-
-
 
   private EasyCertCreatorMain newInstance(String[] args) {
     return new EasyCertCreatorMain(args, commandListArgsProcessor, exceptionHandler);
