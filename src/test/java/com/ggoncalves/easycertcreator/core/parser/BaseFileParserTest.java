@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContent;
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContentCustomSeparator;
@@ -22,7 +23,6 @@ import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFile
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContentStartingBlank;
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.getResultFileContent;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
 class BaseFileParserTest {
@@ -171,11 +171,12 @@ class BaseFileParserTest {
     testBaseFileParser.parseHeaders(createListFileContent());
 
     // When
-    List<String> headerItems = testBaseFileParser.getHeaderElementsFor("FIELDS");
+    Optional<List<String>> headerItems = testBaseFileParser.getHeaderElementsFor("FIELDS");
 
     // Then
-    assertThat(headerItems)
-        .isNotNull()
+    assertThat(headerItems).isPresent();
+
+    assertThat(headerItems.get())
         .hasSize(3)
         .containsExactly("studentName", "email", "studentId");
   }
@@ -187,11 +188,11 @@ class BaseFileParserTest {
     testBaseFileParser.parseHeaders(createListFileContent());
 
     // When
-    List<String> headerItems = testBaseFileParser.getHeaderElementsFor("SEPARATOR");
+    Optional<List<String>> headerItems = testBaseFileParser.getHeaderElementsFor("SEPARATOR");
 
     // Then
-    assertThat(headerItems)
-        .isNotNull()
+    assertThat(headerItems).isPresent();
+    assertThat(headerItems.get())
         .hasSize(1)
         .containsExactly(";");
   }
@@ -203,8 +204,11 @@ class BaseFileParserTest {
     testBaseFileParser.parseHeaders(createListFileContent());
 
     // When
-    assertThatThrownBy(() -> testBaseFileParser.getHeaderElementsFor("invalid_header"))
-        .isInstanceOf(NullPointerException.class);
+    Optional<List<String>> headerElements = testBaseFileParser.getHeaderElementsFor("invalid_header");
+
+    assertThat(headerElements)
+        .isNotNull()
+        .isNotPresent();
   }
 
   @DisplayName("Should return false when does not contains header item")

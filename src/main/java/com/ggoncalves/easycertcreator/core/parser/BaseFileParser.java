@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static com.ggoncalves.easycertcreator.core.parser.FileHeaderField.FIELDS_SEPARATOR;
@@ -41,8 +42,11 @@ abstract class BaseFileParser<T extends Content> implements ContentParser<T> {
     return false;
   }
 
-  protected List<String> getHeaderElementsFor(String header) {
-    return List.of(headers.get(header).split(HEADER_ELEMENT_SEPARATOR.getValue()));
+  protected Optional<List<String>> getHeaderElementsFor(@NotNull String header) {
+    if (containsHeader(header)) {
+      return Optional.of(List.of(headers.get(header).split(HEADER_ELEMENT_SEPARATOR.getValue())));
+    }
+    return Optional.empty();
   }
 
   private void parseHeaderLine(String line) {

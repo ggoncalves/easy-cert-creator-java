@@ -1,13 +1,21 @@
 package com.ggoncalves.easycertcreator.core.parser;
 
 import com.ggoncalves.easycertcreator.core.logic.TableContent;
+import kotlin.Pair;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import static com.ggoncalves.easycertcreator.core.parser.FileHeaderField.HEADER_CHAR;
+import static com.ggoncalves.easycertcreator.core.parser.TableContentField.COMMON_FIELDS;
+import static com.ggoncalves.easycertcreator.core.parser.TableContentField.FIELDS;
 
 /**
  * Parser for files with LIST structure containing common fields and a list of items.
@@ -29,78 +37,95 @@ public class TableContentFileParser extends BaseFileParser<TableContent> {
   public TableContent parse(String filePath) throws IOException {
     List<String> lines = readAllLines(filePath);
     parseHeaders(lines);
+    return parseContent(lines);
+  }
 
-//    if (!"LIST".equals(headers.get("STRUCTURE"))) {
-//      throw new IllegalArgumentException("File is not in LIST structure format");
-//    }
+  private record CommonFieldsParserResult(List<String> metadataNamesList, Integer itemStartLine) {
+  }
 
-    // Parse metadata and column names fields
-    String[] metadataNames = new String[0];
-    String metadataFieldLine = null;
-    int itemStartLine = 0;
-
-    if (getHeaders().get("COMMON_FIELDS") != null) {
-      metadataNames = getHeaders().get("COMMON_FIELDS").split(",");
-      // Find the first non-header, non-empty line (common fields)
-
-      for (int i = 0; i < lines.size(); i++) {
-        String line = lines.get(i).trim();
-        if (!line.isEmpty() && !line.startsWith("#")) {
-          if (metadataFieldLine == null) {
-            metadataFieldLine = line;
-            itemStartLine = i + 1;
-          }
-          else {
-            break;
-          }
-        }
-      }
-    }
-
-    String[] columnNames = getHeaders().get("FIELDS").split(",");
-
-    Map<String, String> metadataNameToValuesMap = new HashMap<>();
-
-    if (metadataFieldLine != null) {
-      // Parse common fields
-      String[] metadataValues = metadataFieldLine.split(getSeparator());
-      if (metadataValues.length != metadataNames.length) {
-        throw new IllegalArgumentException("Common fields count mismatch");
-      }
-
-      for (int i = 0; i < metadataNames.length; i++) {
-        metadataNameToValuesMap.put(metadataNames[i].trim(), metadataValues[i].trim());
-      }
-    }
-
-    // Parse column items
+  @NotNull
+  private List<Map<String, String>> parseColumnMapList(List<String> lines, int itemStartLine, List<String> columnNamesList) {
     List<Map<String, String>> columnNameToValuesMapList = new LinkedList<>();
 
     for (int i = itemStartLine; i < lines.size(); i++) {
       String line = lines.get(i).trim();
-      if (line.isEmpty() || line.startsWith("#")) {
-        continue;
-      }
+      if (isHeaderLine(line)) continue;
 
       String[] columnValues = line.split(getSeparator());
-      if (columnValues.length != columnNames.length) {
+      if (columnValues.length != columnNamesList.size()) {
         log.warn("Skipping line with incorrect field count: {}", line);
         continue;
       }
 
       Map<String, String> columnNameToValuesMap = new HashMap<>();
-      for (int j = 0; j < columnNames.length; j++) {
-        columnNameToValuesMap.put(columnNames[j].trim(), columnValues[j].trim());
-      }
 
+      for (int j = 0; j < columnNamesList.size(); j++) {
+        columnNameToValuesMap.put(columnNamesList.get(j).trim(), columnValues[j].trim());
+      }
       columnNameToValuesMapList.add(columnNameToValuesMap);
     }
+    return columnNameToValuesMapList;
+  }
+
+  @NotNull
+  private CommonFieldsParserResult parseCommonFields(List<String> lines, List<String> metadataNamesList, Map<String, String> metadataNameToValuesMap) {
+    Integer itemStartLine = 0;
+    if (containsHeader(COMMON_FIELDS.getValue())) {
+      String metadataFieldLine = null;
+      // Metadata fields names
+      metadataNamesList = getHeaderElementsFor(COMMON_FIELDS.getValue())
+        .orElse(Collections.emptyList());
+      Optional<Pair<Integer, String>> nextLine = readNextNonHeaderLine(lines);
+      if (nextLine.isPresent()) {
+        itemStartLine = nextLine.get().getFirst();
+        metadataFieldLine = nextLine.get().getSecond();
+      }
+
+      // Metadata fields values
+      if (metadataFieldLine != null) {
+        // Parse common fields
+        String[] metadataValues = metadataFieldLine.split(getSeparator());
+        if (metadataValues.length != metadataNamesList.size()) {
+          throw new IllegalArgumentException("Common fields count mismatch");
+        }
+
+        for (int i = 0; i < metadataNamesList.size(); i++) {
+          metadataNameToValuesMap.put(metadataNamesList.get(i).trim(), metadataValues[i].trim());
+        }
+      }
+    }
+    return new CommonFieldsParserResult(metadataNamesList, itemStartLine);
+  }
+
+  @NotNull
+  private TableContent parseContent(List<String> lines) {
+    List<String> metadataNamesList = List.of();
+    Map<String, String> metadataNameToValuesMap = new HashMap<>();
+
+    // Parse metadata names fields
+    CommonFieldsParserResult commonFieldsParserResult = parseCommonFields(lines, metadataNamesList, metadataNameToValuesMap);
+
+    // Parse column items
+    List<String> columnNamesList = getHeaderElementsFor(FIELDS.getValue())
+        .orElse(Collections.emptyList());
+
+    List<Map<String, String>> columnNameToValuesMapList = parseColumnMapList(lines, commonFieldsParserResult.itemStartLine(), columnNamesList);
 
     return new TableContent(
-        containsHeader("COMMON_FIELDS") ? getHeaderElementsFor("COMMON_FIELDS") : List.of(),
-        getHeaderElementsFor("FIELDS"),
+        commonFieldsParserResult.metadataNamesList(),
+        columnNamesList,
         metadataNameToValuesMap,
         columnNameToValuesMapList
     );
+  }
+
+  private Optional<Pair<Integer, String>> readNextNonHeaderLine(List<String> lines) {
+    for (int i = 0; i < lines.size(); i++) {
+      String line = lines.get(i).trim();
+      if (!line.isEmpty() && !line.startsWith(HEADER_CHAR.getValue())) {
+        return Optional.of(new Pair<>(i, line));
+      }
+    }
+    return Optional.empty();
   }
 }
