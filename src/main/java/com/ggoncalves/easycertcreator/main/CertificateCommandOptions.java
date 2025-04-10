@@ -5,12 +5,13 @@ import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 @Data
+@Singleton
 public class CertificateCommandOptions {
 
   private CommandProcessor commandProcessor;
-  private CertificateFileValidator certificateFileValidator;
 
   @Inject
   public CertificateCommandOptions(@NotNull CommandProcessor commandProcessor) {
@@ -21,7 +22,7 @@ public class CertificateCommandOptions {
   private void configureOptions() {
     commandProcessor
         .addRequiredOption("c", "jasperfile", true, "Compiled Jasper Template File")
-        .addRequiredOption("i", "certinfofile", true, "Certification File Info (.txt file)")
+        .addRequiredOption("i", "infofile", true, "File with data in supported format (LIST or SIMPLE structure, auto-detected)")
         .addRequiredOption("o", "output", true, "Output directory to save .pdf files");
   }
 }
