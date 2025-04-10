@@ -79,6 +79,19 @@ public class TestUtilFactory {
     return lines;
   }
 
+  public static List<String> createListFileContentCustomSeparator() {
+    List<String> lines = new ArrayList<>();
+    lines.add("#COMMON_FIELDS:eventName,date,workload,location");
+    lines.add("#FIELDS:studentName,email,studentId");
+    lines.add("#SEPARATOR:,");
+    lines.add("  ");
+    lines.add("Java Workshop,05/15/2023,40 hours,San Francisco");
+    lines.add("  ");
+    lines.add("John Smith,john@email.com,12345");
+    lines.add("Jane Doe,jane@email.com,67890");
+    return lines;
+  }
+
   public static List<String> createSimpleFileContent() {
     List<String> lines = new ArrayList<>();
     lines.add("#FIELDS:name,role,company,event,date");

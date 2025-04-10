@@ -1,6 +1,7 @@
 package com.ggoncalves.easycertcreator.core;
 
 import com.google.common.annotations.VisibleForTesting;
+import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -16,10 +17,11 @@ import static com.ggoncalves.easycertcreator.core.FileHeaderField.HEADER_CHAR;
 import static com.ggoncalves.easycertcreator.core.FileHeaderField.HEADER_ELEMENT_SEPARATOR;
 import static com.ggoncalves.easycertcreator.core.FileHeaderField.HEADER_SEPARADOR;
 
+@Data
 abstract class BaseFileParser<T extends Content> implements ContentParser<T> {
 
-  protected String separator = ";";
-  protected Map<String, String> headers = new HashMap<>();
+  private String separator = ";";
+  private Map<String, String> headers = new HashMap<>();
 
   // Define the pattern as a static final field for reuse and compilation
   private static final String HEADER_REGEX_PATTERN_STRING = "^#[^:]+:[^:]+$";
@@ -42,20 +44,24 @@ abstract class BaseFileParser<T extends Content> implements ContentParser<T> {
     return List.of(headers.get(header).split(HEADER_ELEMENT_SEPARATOR.getValue()));
   }
 
+  private void parseHeaderLine(String line) {
+    String[] parts = line.substring(1).split(HEADER_SEPARADOR.getValue(), 2);
+    if (parts.length == 2) {
+      addHeader(parts[0].trim(), parts[1].trim());
+    }
+  }
+
+  private void addHeader(String header, String value) {
+    headers.put(header, value);
+    if (header.equals(FIELDS_SEPARATOR.getValue())) {
+      this.setSeparator(value);
+    }
+  }
+
   protected void parseHeaders(List<String> lines) {
-    for (String line : lines) {
-      if (!isHeaderLine(line)) continue;
-
-      String[] parts = line.substring(1).split(HEADER_SEPARADOR.getValue(), 2);
-      if (parts.length == 2) {
-        headers.put(parts[0].trim(), parts[1].trim());
-      }
-    }
-
-    // Set separator if defined in headers
-    if (headers.containsKey(FIELDS_SEPARATOR.getValue())) {
-      separator = headers.get(FIELDS_SEPARATOR.getValue());
-    }
+    lines.stream()
+        .filter(this::isHeaderLine)
+        .forEach(this::parseHeaderLine);
   }
 
   public boolean containsHeader(@NotNull String header) {

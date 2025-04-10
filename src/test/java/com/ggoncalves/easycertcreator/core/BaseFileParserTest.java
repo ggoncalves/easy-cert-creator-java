@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContent;
+import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContentCustomSeparator;
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContentNoHeaders;
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.createListFileContentStartingBlank;
 import static com.ggoncalves.easycertcreator.util.TestUtilFactory.getResultFileContent;
@@ -56,20 +57,45 @@ class BaseFileParserTest {
     List<String> fileContent = createListFileContent();
 
     // When
-    assertThat(testBaseFileParser.headers).isEmpty();
+    assertThat(testBaseFileParser.getHeaders()).isEmpty();
     testBaseFileParser.parseHeaders(fileContent);
 
     // Then
-    assertThat(testBaseFileParser.headers)
+    assertThat(testBaseFileParser.getHeaders())
         .isNotEmpty()
         .hasSize(3);
 
-    assertThat(testBaseFileParser.headers)
+    assertThat(testBaseFileParser.getHeaders())
         .containsAllEntriesOf(Map.of(
             "COMMON_FIELDS", "eventName,date,workload,location",
             "FIELDS", "studentName,email,studentId",
             "SEPARATOR", ";"
                                     ));
+  }
+
+  @Test
+  @DisplayName("Should parse Headers with custom separator")
+  void shouldParseHeadersWithCustomSeparator() {
+    // Given
+    List<String> fileContent = createListFileContentCustomSeparator();
+
+    // When
+    assertThat(testBaseFileParser.getHeaders()).isEmpty();
+    testBaseFileParser.parseHeaders(fileContent);
+
+    // Then
+    assertThat(testBaseFileParser.getHeaders())
+        .isNotEmpty()
+        .hasSize(3);
+
+    assertThat(testBaseFileParser.getHeaders())
+        .containsAllEntriesOf(Map.of(
+            "COMMON_FIELDS", "eventName,date,workload,location",
+            "FIELDS", "studentName,email,studentId",
+            "SEPARATOR", ","
+                                    ));
+
+    assertThat(testBaseFileParser.getSeparator()).isEqualTo(",");
   }
 
   @Test
@@ -79,15 +105,15 @@ class BaseFileParserTest {
     List<String> fileContent = createListFileContentStartingBlank();
 
     // When
-    assertThat(testBaseFileParser.headers).isEmpty();
+    assertThat(testBaseFileParser.getHeaders()).isEmpty();
     testBaseFileParser.parseHeaders(fileContent);
 
     // Then
-    assertThat(testBaseFileParser.headers)
+    assertThat(testBaseFileParser.getHeaders())
         .isNotEmpty()
         .hasSize(3);
 
-    assertThat(testBaseFileParser.headers)
+    assertThat(testBaseFileParser.getHeaders())
         .containsAllEntriesOf(Map.of(
             "COMMON_FIELDS", "eventName,date,workload,location",
             "FIELDS", "studentName,email,studentId",
@@ -102,9 +128,9 @@ class BaseFileParserTest {
     List<String> fileContent = createListFileContentNoHeaders();
 
     // When
-    assertThat(testBaseFileParser.headers).isEmpty();
+    assertThat(testBaseFileParser.getHeaders()).isEmpty();
     testBaseFileParser.parseHeaders(fileContent);
-    assertThat(testBaseFileParser.headers).isEmpty();
+    assertThat(testBaseFileParser.getHeaders()).isEmpty();
   }
 
   @DisplayName("Should consider true for all valid headers")

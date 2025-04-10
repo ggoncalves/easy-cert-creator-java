@@ -38,8 +38,8 @@ public class TableContentFileParser extends BaseFileParser<TableContent> {
     String metadataFieldLine = null;
     int itemStartLine = 0;
 
-    if (headers.get("COMMON_FIELDS") != null) {
-      metadataNames = headers.get("COMMON_FIELDS").split(",");
+    if (getHeaders().get("COMMON_FIELDS") != null) {
+      metadataNames = getHeaders().get("COMMON_FIELDS").split(",");
       // Find the first non-header, non-empty line (common fields)
 
       for (int i = 0; i < lines.size(); i++) {
@@ -56,13 +56,13 @@ public class TableContentFileParser extends BaseFileParser<TableContent> {
       }
     }
 
-    String[] columnNames = headers.get("FIELDS").split(",");
+    String[] columnNames = getHeaders().get("FIELDS").split(",");
 
     Map<String, String> metadataNameToValuesMap = new HashMap<>();
 
     if (metadataFieldLine != null) {
       // Parse common fields
-      String[] metadataValues = metadataFieldLine.split(separator);
+      String[] metadataValues = metadataFieldLine.split(getSeparator());
       if (metadataValues.length != metadataNames.length) {
         throw new IllegalArgumentException("Common fields count mismatch");
       }
@@ -81,7 +81,7 @@ public class TableContentFileParser extends BaseFileParser<TableContent> {
         continue;
       }
 
-      String[] columnValues = line.split(separator);
+      String[] columnValues = line.split(getSeparator());
       if (columnValues.length != columnNames.length) {
         log.warn("Skipping line with incorrect field count: {}", line);
         continue;
