@@ -1,4 +1,6 @@
-package com.ggoncalves.easycertcreator.core;
+package com.ggoncalves.easycertcreator.core.parser;
+
+import com.ggoncalves.easycertcreator.core.logic.Content;
 
 import java.io.IOException;
 

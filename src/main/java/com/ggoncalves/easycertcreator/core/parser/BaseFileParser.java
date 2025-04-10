@@ -1,5 +1,6 @@
-package com.ggoncalves.easycertcreator.core;
+package com.ggoncalves.easycertcreator.core.parser;
 
+import com.ggoncalves.easycertcreator.core.logic.Content;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
@@ -12,10 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.ggoncalves.easycertcreator.core.FileHeaderField.FIELDS_SEPARATOR;
-import static com.ggoncalves.easycertcreator.core.FileHeaderField.HEADER_CHAR;
-import static com.ggoncalves.easycertcreator.core.FileHeaderField.HEADER_ELEMENT_SEPARATOR;
-import static com.ggoncalves.easycertcreator.core.FileHeaderField.HEADER_SEPARADOR;
+import static com.ggoncalves.easycertcreator.core.parser.FileHeaderField.FIELDS_SEPARATOR;
+import static com.ggoncalves.easycertcreator.core.parser.FileHeaderField.HEADER_CHAR;
+import static com.ggoncalves.easycertcreator.core.parser.FileHeaderField.HEADER_ELEMENT_SEPARATOR;
+import static com.ggoncalves.easycertcreator.core.parser.FileHeaderField.HEADER_SEPARADOR;
 
 @Data
 abstract class BaseFileParser<T extends Content> implements ContentParser<T> {

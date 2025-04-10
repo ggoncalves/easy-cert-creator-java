@@ -1,5 +1,6 @@
-package com.ggoncalves.easycertcreator.core;
+package com.ggoncalves.easycertcreator.core.parser;
 
+import com.ggoncalves.easycertcreator.core.logic.Content;
 import com.ggoncalves.easycertcreator.util.TestUtilFactory;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;

@@ -1,5 +1,6 @@
-package com.ggoncalves.easycertcreator.core;
+package com.ggoncalves.easycertcreator.core.parser;
 
+import com.ggoncalves.easycertcreator.core.logic.TableContent;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;

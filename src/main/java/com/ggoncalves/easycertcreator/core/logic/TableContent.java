@@ -1,4 +1,4 @@
-package com.ggoncalves.easycertcreator.core;
+package com.ggoncalves.easycertcreator.core.logic;
 
 import lombok.Data;
 
