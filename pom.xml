@@ -134,6 +134,13 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.13.0</version>
         </dependency>
+        
+        <!-- Kotlin Standard Library -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>1.9.22</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -153,7 +160,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.ggoncalves.easycertcreator.App</mainClass>
+                            <mainClass>com.ggoncalves.easycertcreator.main.EasyCertCreatorMain</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

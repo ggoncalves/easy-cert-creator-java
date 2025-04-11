@@ -1,5 +1,7 @@
 package com.ggoncalves.easycertcreator.main;
 
+import com.ggoncalves.easycertcreator.core.CertificateCreator;
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
 import com.ggoncalves.easycertcreator.di.AppComponent;
 import com.ggoncalves.ggutils.console.exception.ExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -13,11 +15,9 @@ import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import java.util.Optional;
+
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EasyCertCreatorMainTest {
@@ -32,12 +32,20 @@ class EasyCertCreatorMainTest {
   private EasyCertCreatorMain main;
 
   @Mock
+  private CertificateCreator certificateCreator;
+
+  @Mock
   private AppComponent appComponent;
+
+  @Mock
+  private CertificateFileLocations certificateFileLocations;
 
   @DisplayName("Should Validade and Process Arguments Successfully")
   @Test
   void shouldValidateAndProcessArgumentsSuccessfully() {
     // Given
+    Optional<CertificateFileLocations> fileLocationsOptional = Optional.of(certificateFileLocations);
+    doReturn(fileLocationsOptional).when(commandListArgsProcessor).process(any());
     String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
     main = newInstance(args);
 
@@ -46,6 +54,25 @@ class EasyCertCreatorMainTest {
 
     // Then
     verify(commandListArgsProcessor).process(args);
+    verify(certificateCreator).create(certificateFileLocations);
+    verifyNoInteractions(exceptionHandler);
+  }
+
+  @DisplayName("Should do nothing when unable to parse file locations")
+  @Test
+  void shouldDoNothingWhenUnableToParseFileLocations() {
+    // Given
+    Optional<CertificateFileLocations> fileLocationsOptional = Optional.empty();
+    doReturn(fileLocationsOptional).when(commandListArgsProcessor).process(any());
+    String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
+    main = newInstance(args);
+
+    // When
+    main.execute();
+
+    // Then
+    verify(commandListArgsProcessor).process(args);
+    verifyNoInteractions(certificateCreator);
     verifyNoInteractions(exceptionHandler);
   }
 
@@ -64,24 +91,21 @@ class EasyCertCreatorMainTest {
 
     // Then
     verify(commandListArgsProcessor).process(args);
+    verifyNoInteractions(certificateCreator);
     verify(exceptionHandler).handle(exception);
   }
 
-  @DisplayName("ShouldExecuteMainProperly")
+  @DisplayName("Should execute main properly")
   @Test
   void shouldExecuteMainProperly() {
     String[] testArgs = {"arg1", "arg2"};
 
     try (MockedStatic<EasyCertCreatorMain> mockedStatic = mockStatic(EasyCertCreatorMain.class)) {
-      // Only mock the createAppComponent method, allowing the real main method to execute
+      // Given
       mockedStatic.when(() -> EasyCertCreatorMain.createAppComponent(testArgs))
           .thenReturn(appComponent);
-
-      // Call the original method for main
       mockedStatic.when(() -> EasyCertCreatorMain.main(testArgs))
           .thenCallRealMethod();
-
-      // Set up the AppComponent mock
       when(appComponent.getMainApp()).thenReturn(main);
 
       // When
@@ -94,6 +118,6 @@ class EasyCertCreatorMainTest {
   }
 
   private EasyCertCreatorMain newInstance(String[] args) {
-    return new EasyCertCreatorMain(args, commandListArgsProcessor, exceptionHandler);
+    return new EasyCertCreatorMain(args, commandListArgsProcessor, certificateCreator, exceptionHandler);
   }
 }
