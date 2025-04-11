@@ -1,5 +1,6 @@
 package com.ggoncalves.easycertcreator.main;
 
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
 import com.ggoncalves.ggutils.console.cli.CommandProcessor;
 import com.ggoncalves.ggutils.console.exception.FilePermissionException;
 import com.ggoncalves.ggutils.console.exception.InvalidFileException;
@@ -54,15 +55,18 @@ class CertificateFileValidatorTest {
 
   @DisplayName("Should validate files present in a command line successfully")
   @Test
-  void shouldValidateFilesPresentInACommandLineSuccessfully() {
+  void shouldValidateAndRetrieveCertificateFilesPresentInACommandLineSuccessfully() {
     // Given
     prepareCommandLineMock();
 
     // When
-    validator.validateFiles(commandLine);
+    CertificateFileLocations fileLocations = validator.validateAndRetrieveCertificateFiles(commandLine);
 
     // Then
-    assertThat(validator).isNotNull();
+    assertThat(fileLocations).isNotNull();
+    assertThat(fileLocations.jasperTemplateFilePath()).isEqualTo(VALID_INPUT_FILE_C);
+    assertThat(fileLocations.certificateInfoFilePath()).isEqualTo(VALID_INPUT_FILE_I);
+    assertThat(fileLocations.outputDir()).isEqualTo(VALID_OUTPUT_DIR);
 
     verify(commandLine).getOptionValue(eq("c"));
     verify(commandLine).getOptionValue(eq("i"));
@@ -86,13 +90,14 @@ class CertificateFileValidatorTest {
 
     // When
     assertThatThrownBy(() ->
-        validator.validateFiles(commandLine)).isInstanceOf(InvalidFileException.class);
+        validator.validateAndRetrieveCertificateFiles(commandLine)).isInstanceOf(InvalidFileException.class);
 
     // Then
     assertThat(validator).isNotNull();
 
     verify(commandLine).getOptionValue(eq("c"));
-    verifyNoMoreInteractions(commandLine);
+    verify(commandLine).getOptionValue(eq("i"));
+    verify(commandLine).getOptionValue(eq("o"));
 
     verify(commandProcessor).validateInputFile(eq(VALID_INPUT_FILE_C), anyString());
     verifyNoMoreInteractions(commandProcessor);
@@ -109,7 +114,7 @@ class CertificateFileValidatorTest {
 
     // When
     assertThatThrownBy(() ->
-        validator.validateFiles(commandLine)).isInstanceOf(FilePermissionException.class);
+        validator.validateAndRetrieveCertificateFiles(commandLine)).isInstanceOf(FilePermissionException.class);
 
     // Then
     assertThat(validator).isNotNull();

@@ -1,5 +1,6 @@
 package com.ggoncalves.easycertcreator.main;
 
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
 import com.ggoncalves.easycertcreator.util.TestEnvironmentSilencer;
 import com.ggoncalves.ggutils.console.cli.CommandProcessor;
 import lombok.SneakyThrows;
@@ -14,10 +15,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -32,6 +37,9 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
   @Mock
   private CertificateFileValidator certificateFileValidator;
 
+  @Mock
+  private CertificateFileLocations certificateFileLocations;
+
   private CertificateArgumentsProcessor certificateArgumentsProcessor;
 
   @Mock
@@ -40,6 +48,7 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
   @BeforeEach
   void beforeEach() {
     doReturn(commandProcessor).when(certificateCommandOptions).getCommandProcessor();
+    lenient().doReturn(certificateFileLocations).when(certificateFileValidator).validateAndRetrieveCertificateFiles(any(CommandLine.class));
 
     certificateArgumentsProcessor = spy(new CertificateArgumentsProcessor(
         certificateCommandOptions, certificateFileValidator));
@@ -68,11 +77,14 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
     doReturn(commandLine).when(commandProcessor).parseArgs(args);
 
     // When
-    certificateArgumentsProcessor.process(args);
+    Optional<CertificateFileLocations> fileLocationsOptional = certificateArgumentsProcessor.process(args);
 
     // Then
+    assertThat(fileLocationsOptional).isPresent();
+    assertThat(fileLocationsOptional).get().isEqualTo(certificateFileLocations);
+
     verify(commandProcessor).parseArgs(args);
-    verify(certificateFileValidator).validateFiles(commandLine);
+    verify(certificateFileValidator).validateAndRetrieveCertificateFiles(commandLine);
     verifyNoMoreInteractions(commandProcessor);
     verifyNoMoreInteractions(certificateFileValidator);
   }
@@ -88,9 +100,10 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
         .parseArgs(args);
 
     // When
-    certificateArgumentsProcessor.process(args);
+    Optional<CertificateFileLocations> fileLocationsOptional = certificateArgumentsProcessor.process(args);
 
     // Then
+    assertThat(fileLocationsOptional).isNotPresent();
     verify(commandProcessor).parseArgs(args);
     verify(commandProcessor).printHelp("EasyCertCreator");
   }
@@ -107,7 +120,7 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
 
     doThrow(exception)
         .when(certificateFileValidator)
-        .validateFiles(commandLine);
+        .validateAndRetrieveCertificateFiles(commandLine);
 
     // When
     assertThatThrownBy(() ->
@@ -115,7 +128,7 @@ class CertificateArgumentsProcessorTest implements TestEnvironmentSilencer {
 
     // Then
     verify(commandProcessor).parseArgs(args);
-    verify(certificateFileValidator).validateFiles(commandLine);
+    verify(certificateFileValidator).validateAndRetrieveCertificateFiles(commandLine);
 //    verify(commandProcessor).printHelp("EasyCertCreator");
   }
 

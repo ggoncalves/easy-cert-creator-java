@@ -1,5 +1,6 @@
 package com.ggoncalves.easycertcreator.main;
 
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
 import com.ggoncalves.ggutils.console.cli.CommandProcessor;
 import com.ggoncalves.ggutils.console.exception.FilePermissionException;
 import com.ggoncalves.ggutils.console.exception.InvalidFileException;
@@ -18,9 +19,18 @@ public class CertificateFileValidator {
     this.commandProcessor = commandProcessor;
   }
 
-  public void validateFiles(CommandLine cmd) throws InvalidFileException, FilePermissionException {
-    commandProcessor.validateInputFile(cmd.getOptionValue("c"), "Jasper template");
-    commandProcessor.validateInputFile(cmd.getOptionValue("i"), "Certificate info");
-    commandProcessor.validateOutputDir(cmd.getOptionValue("o"));
+  public CertificateFileLocations validateAndRetrieveCertificateFiles(CommandLine cmd) throws InvalidFileException, FilePermissionException {
+    CertificateFileLocations certificateFileLocations = retrieveCertificateFileLocations(cmd);
+    commandProcessor.validateInputFile(certificateFileLocations.jasperTemplateFilePath(), "Jasper template");
+    commandProcessor.validateInputFile(certificateFileLocations.certificateInfoFilePath(), "Certificate info");
+    commandProcessor.validateOutputDir(certificateFileLocations.outputDir());
+    return certificateFileLocations;
+  }
+
+  private CertificateFileLocations retrieveCertificateFileLocations(CommandLine cmd) {
+    return new CertificateFileLocations(
+        cmd.getOptionValue("c"),
+        cmd.getOptionValue("i"),
+        cmd.getOptionValue("o"));
   }
 }
