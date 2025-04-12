@@ -1,13 +1,13 @@
 package com.ggoncalves.easycertcreator.core;
 
-import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileConfiguration;
 import com.ggoncalves.easycertcreator.core.logic.TableContent;
 import com.ggoncalves.easycertcreator.core.parser.TableContentFileParser;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.util.JRLoader;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -17,12 +17,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
 
-@NoArgsConstructor(force = true)
 @Data
 public class CertificateCreator {
 
+  private static final String DEFAULT_FILENAME = "cert_created";
   private final TableContentFileParser tableContentFileParser;
 
   @Inject
@@ -30,21 +30,27 @@ public class CertificateCreator {
     this.tableContentFileParser = tableContentFileParser;
   }
 
-  public void create(@NotNull CertificateFileLocations certificateFileLocations) {
+  public CertificateCreator() {
+    this(new TableContentFileParser());
+  }
 
-    try (InputStream jasperStream = createJasperInputStream(certificateFileLocations.jasperTemplateFilePath())) {
+  public void create(@NotNull CertificateFileConfiguration certificateFileConfiguration) {
+
+    try (InputStream jasperStream = createJasperInputStream(certificateFileConfiguration.jasperTemplateFilePath())) {
 
       JasperReport jasperReport = loadJasperReportByStream(jasperStream);
-      TableContent tableContent = readTableContentFromFile(certificateFileLocations.certificateInfoFilePath());
-      fillAndExportReports(jasperReport, tableContent, certificateFileLocations.outputDir());
+      TableContent tableContent = readTableContentFromFile(certificateFileConfiguration.certificateInfoFilePath());
+      fillAndExportReports(jasperReport, tableContent, certificateFileConfiguration);
 
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
-  private void fillAndExportReports(JasperReport jasperReport, TableContent tableContent, String outputDir) {
-    AtomicInteger index = new AtomicInteger(1);
+  private void fillAndExportReports(JasperReport jasperReport, TableContent tableContent,
+                                    CertificateFileConfiguration certificateFileConfiguration) {
+
+    Map<String, Integer> filenameToOccurrenciesMap = new HashMap<>();
 
     tableContent.getListOfColumnNamesToValuesMap().forEach(
         columnNamesToValuesMap -> {
@@ -53,7 +59,7 @@ public class CertificateCreator {
           reportParametersMap.putAll(columnNamesToValuesMap);
           try {
             JasperPrint jasperPrint = createJasperPrint(jasperReport, reportParametersMap);
-            exportToPdf(jasperPrint, createNumberedFileName(outputDir, index.getAndIncrement()));
+            exportToPdf(jasperPrint, buildOutputFilePath(certificateFileConfiguration, reportParametersMap, filenameToOccurrenciesMap));
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
@@ -64,17 +70,55 @@ public class CertificateCreator {
     return tableContentFileParser.parse(filePath);
   }
 
-  private String createNumberedFileName(String outputDir, Integer number) {
-    Path directory = Paths.get(outputDir);
-    String filename = "fileresult" + number + ".pdf";
-    Path filePath = directory.resolve(filename);
-    return filePath.toString();
+  private boolean isFileNameWithVariable(@NotNull String filename) {
+    return filename.contains("$");
+  }
 
+  private String replaceVariablesInFilename(String filename, Map<String, Object> reportParametersMap) {
+    for (String key : reportParametersMap.keySet()) {
+      if (filename.contains("$" + key)) {
+        filename = filename.replaceAll("\\$" + key, reportParametersMap.get(key).toString());
+      }
+    }
+    filename = filename.replaceAll("\\$", "");
+    filename = filename.replaceAll("\\s", "_");
+    return filename;
+  }
+
+  private String generateUniqueFilename(Map<String, Integer> filenameToOccurrenciesMap, String filename) {
+    // Get current count or insert 0, then increment the value
+    Integer occurrence = filenameToOccurrenciesMap.compute(filename, (key, count) -> count == null ? 1 : count + 1);
+
+    // For first occurrence (1), keep the original filename
+    // For subsequent occurrences (>1), append _count suffix
+    return occurrence == 1 ? filename : filename + "_" + occurrence;
+  }
+
+  @VisibleForTesting
+  String buildOutputFilePath(CertificateFileConfiguration certificateFileConfiguration,
+                             Map<String, Object> reportParametersMap,
+                             Map<String, Integer> filenameToOccurrenciesMap) {
+
+    String filename = StringUtils.defaultIfBlank(certificateFileConfiguration.certificateFileName(), DEFAULT_FILENAME);
+
+    if (isFileNameWithVariable(filename)) {
+      filename = replaceVariablesInFilename(filename, reportParametersMap);
+    }
+
+    filename = generateUniqueFilename(filenameToOccurrenciesMap, filename);
+
+    return generateFilePath(certificateFileConfiguration, filename);
+  }
+
+  private String generateFilePath(CertificateFileConfiguration certificateFileConfiguration, String filename) {
+    Path directory = Paths.get(certificateFileConfiguration.outputDir());
+    Path filePath = directory.resolve(filename + ".pdf");
+    return filePath.toString();
   }
 
   @VisibleForTesting
   JasperReport loadJasperReportByStream(InputStream jasperStream) throws JRException {
-     return (JasperReport)JRLoader.loadObject(jasperStream);
+    return (JasperReport) JRLoader.loadObject(jasperStream);
   }
 
   @VisibleForTesting

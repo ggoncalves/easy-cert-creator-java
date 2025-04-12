@@ -1,7 +1,7 @@
 package com.ggoncalves.easycertcreator.main;
 
 import com.ggoncalves.easycertcreator.core.CertificateCreator;
-import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileConfiguration;
 import com.ggoncalves.easycertcreator.di.AppComponent;
 import com.ggoncalves.ggutils.console.exception.ExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -38,13 +38,13 @@ class EasyCertCreatorMainTest {
   private AppComponent appComponent;
 
   @Mock
-  private CertificateFileLocations certificateFileLocations;
+  private CertificateFileConfiguration certificateFileConfiguration;
 
   @DisplayName("Should Validade and Process Arguments Successfully")
   @Test
   void shouldValidateAndProcessArgumentsSuccessfully() {
     // Given
-    Optional<CertificateFileLocations> fileLocationsOptional = Optional.of(certificateFileLocations);
+    Optional<CertificateFileConfiguration> fileLocationsOptional = Optional.of(certificateFileConfiguration);
     doReturn(fileLocationsOptional).when(commandListArgsProcessor).process(any());
     String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
     main = newInstance(args);
@@ -54,7 +54,7 @@ class EasyCertCreatorMainTest {
 
     // Then
     verify(commandListArgsProcessor).process(args);
-    verify(certificateCreator).create(certificateFileLocations);
+    verify(certificateCreator).create(certificateFileConfiguration);
     verifyNoInteractions(exceptionHandler);
   }
 
@@ -62,7 +62,7 @@ class EasyCertCreatorMainTest {
   @Test
   void shouldDoNothingWhenUnableToParseFileLocations() {
     // Given
-    Optional<CertificateFileLocations> fileLocationsOptional = Optional.empty();
+    Optional<CertificateFileConfiguration> fileLocationsOptional = Optional.empty();
     doReturn(fileLocationsOptional).when(commandListArgsProcessor).process(any());
     String[] args = {"-c", "file.jasper", "-i", "info.txt", "-o", "dir"};
     main = newInstance(args);

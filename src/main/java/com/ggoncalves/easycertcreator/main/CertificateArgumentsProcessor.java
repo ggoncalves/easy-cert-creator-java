@@ -1,6 +1,6 @@
 package com.ggoncalves.easycertcreator.main;
 
-import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileConfiguration;
 import com.ggoncalves.ggutils.console.cli.CommandProcessor;
 import lombok.Data;
 import org.apache.commons.cli.CommandLine;
@@ -22,7 +22,7 @@ public class CertificateArgumentsProcessor {
     this.certificateFileValidator = certificateFileValidator;
   }
 
-  public Optional<CertificateFileLocations> process(@NotNull String[] args) {
+  public Optional<CertificateFileConfiguration> process(@NotNull String[] args) {
     try {
       CommandLine cmd = commandProcessor.parseArgs(args);
       return Optional.of(certificateFileValidator.validateAndRetrieveCertificateFiles(cmd));

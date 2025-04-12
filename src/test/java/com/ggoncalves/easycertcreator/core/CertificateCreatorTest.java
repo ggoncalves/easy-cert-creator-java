@@ -1,8 +1,9 @@
 package com.ggoncalves.easycertcreator.core;
 
-import com.ggoncalves.easycertcreator.core.logic.CertificateFileLocations;
+import com.ggoncalves.easycertcreator.core.logic.CertificateFileConfiguration;
 import com.ggoncalves.easycertcreator.core.logic.TableContent;
 import com.ggoncalves.easycertcreator.core.parser.TableContentFileParser;
+import com.google.common.collect.Maps;
 import lombok.SneakyThrows;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
@@ -42,43 +43,259 @@ class CertificateCreatorTest {
   @Mock
   private JasperPrint jasperPrint;
 
-  private CertificateFileLocations certificateFileLocations;
+  private CertificateFileConfiguration certificateFileConfiguration;
 
   private final ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-  private final ArgumentCaptor<HashMap<String, Object>> hashMapCaptor = ArgumentCaptor.forClass(HashMap.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<HashMap<String, Object>> hashMapCaptor =
+      ArgumentCaptor.forClass((Class<HashMap<String, Object>>) (Class<?>) HashMap.class);
+
 
   @SneakyThrows
   @BeforeEach
   void beforeEach() {
-    certificateFileLocations = createCertificateFileLocations();
+    certificateFileConfiguration = createCertificateFileConfiguration();
     certificateCreator = spy(new CertificateCreator(tableContentFileParser));
 
-    doReturn(jasperPrint).when(certificateCreator).createJasperPrint(eq(jasperReport), any());
-    doNothing().when(certificateCreator).exportToPdf(eq(jasperPrint), anyString());
+    lenient().doReturn(jasperPrint).when(certificateCreator).createJasperPrint(eq(jasperReport), any());
+    lenient().doNothing().when(certificateCreator).exportToPdf(eq(jasperPrint), anyString());
   }
 
   @SneakyThrows
-  @DisplayName("Should create successfully")
+  @DisplayName("Should create successfully with default filename")
   @Test
   void shouldCreateSuccessfully() {
     // Given
+    certificateFileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", null);
+
     doReturn(createTableContent()).when(tableContentFileParser)
-        .parse(certificateFileLocations.certificateInfoFilePath());
+        .parse(certificateFileConfiguration.certificateInfoFilePath());
     prepareMocks();
     // When
-    certificateCreator.create(certificateFileLocations);
+    certificateCreator.create(certificateFileConfiguration);
 
     // Then
-    verify(tableContentFileParser).parse(certificateFileLocations.certificateInfoFilePath());
+    verify(tableContentFileParser).parse(certificateFileConfiguration.certificateInfoFilePath());
     verify(certificateCreator, times(3)).createJasperPrint(eq(jasperReport), hashMapCaptor.capture());
     verify(certificateCreator, times(3)).exportToPdf(eq(jasperPrint), stringCaptor.capture());
     verifyParametersMap(hashMapCaptor.getAllValues());
 
     assertThat(stringCaptor.getAllValues()).contains(
-        "outputDir/fileresult1.pdf",
-        "outputDir/fileresult2.pdf",
-        "outputDir/fileresult3.pdf"
+        "outputDir/cert_created.pdf",
+        "outputDir/cert_created_2.pdf",
+        "outputDir/cert_created_3.pdf"
     );
+  }
+
+  @SneakyThrows
+  @DisplayName("Should create successfully with custom filename")
+  @Test
+  void shouldCreateSuccessfullyWithCustomFilename() {
+    // Given
+    certificateFileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "Certificate_$studentName");
+
+    doReturn(createTableContent()).when(tableContentFileParser)
+        .parse(certificateFileConfiguration.certificateInfoFilePath());
+    prepareMocks();
+    // When
+    certificateCreator.create(certificateFileConfiguration);
+
+    // Then
+    verify(tableContentFileParser).parse(certificateFileConfiguration.certificateInfoFilePath());
+    verify(certificateCreator, times(3)).createJasperPrint(eq(jasperReport), hashMapCaptor.capture());
+    verify(certificateCreator, times(3)).exportToPdf(eq(jasperPrint), stringCaptor.capture());
+    verifyParametersMap(hashMapCaptor.getAllValues());
+
+    assertThat(stringCaptor.getAllValues()).contains(
+        "outputDir/Certificate_Bill_Gates.pdf",
+        "outputDir/Certificate_Linus_Torvalds.pdf",
+        "outputDir/Certificate_Kurt_Cobain.pdf"
+    );
+  }
+
+  @DisplayName("Should build output file path with default name")
+  @Test
+  void shouldBuildOutputFilePathWithDefaultName() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", null);
+
+    // When
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), new HashMap<>());
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/cert_created.pdf");
+  }
+
+  @DisplayName("Should build output file path with custom name")
+  @Test
+  void shouldBuildOutputFilePathWithCustomName() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "custom_name");
+
+    // When
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), new HashMap<>());
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/custom_name.pdf");
+  }
+
+  @DisplayName("Should build output file path with default name with duplicated name")
+  @Test
+  void shouldBuildOutputFilePathWithDefaultNameWithDuplicatedName() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", null);
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    filenameToOccurrenciesMap.put("cert_created", 1);
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/cert_created_2.pdf");
+  }
+
+  @DisplayName("Should build output file path with custom name duplicated")
+  @Test
+  void shouldBuildOutputFilePathWithCustomNameDuplicated() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "custom_name");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    filenameToOccurrenciesMap.put("custom_name", 3);
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/custom_name_4.pdf");
+  }
+
+  @DisplayName("Should build output file path with non existent variable")
+  @Test
+  void shouldBuildOutputFilePathWithNonExistentVariable() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "custom_name$NotExists");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/custom_nameNotExists.pdf");
+  }
+
+  @DisplayName("Should build output file path with non existent variable duplicated")
+  @Test
+  void shouldBuildOutputFilePathWithNonExistentVariableDuplicated() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "custom_name$NotExists");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    filenameToOccurrenciesMap.put("custom_nameNotExists", 2);
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/custom_nameNotExists_3.pdf");
+  }
+
+  @DisplayName("Should build output file path with existent variable")
+  @Test
+  void shouldBuildOutputFileWithExistentVariable() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "$studentName");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/Linus_Torvalds.pdf");
+  }
+
+  @DisplayName("Should build output file path with existent variable duplicated")
+  @Test
+  void shouldBuildOutputFileWithExistentVariableDuplicated() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "$studentName");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    filenameToOccurrenciesMap.put("Linus_Torvalds", 1);
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/Linus_Torvalds_2.pdf");
+  }
+
+  @DisplayName("Should build output file path with two existent variables")
+  @Test
+  void shouldBuildOutputFileWithTwoExistentVariables() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "$firstName$lastName");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createBadgeTalentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/KurtCobain.pdf");
+  }
+
+  @DisplayName("Should build output file path with two existent variables 2")
+  @Test
+  void shouldBuildOutputFileWithTwoExistentVariables2() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "$firstName_$lastName");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createBadgeTalentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/Kurt_Cobain.pdf");
+  }
+
+  @DisplayName("Should build output file path with single existent variables")
+  @Test
+  void shouldBuildOutputFileWithSingleExistentVariables() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "file_$firstName_$lostName");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createBadgeTalentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/file_Kurt_lostName.pdf");
+  }
+
+  @DisplayName("Should build output file path with existent variable without $")
+  @Test
+  void shouldBuildOutputFileWithExistentVariableWithoutDollar() {
+    CertificateFileConfiguration fileConfiguration = new CertificateFileConfiguration("jasperFilePath",
+        "certificationInfoFile", "outputDir", "studentName");
+
+    // When
+    Map<String, Integer> filenameToOccurrenciesMap = Maps.newHashMap();
+    String outputFilePath = certificateCreator.buildOutputFilePath(fileConfiguration,
+        createStudentMap(), filenameToOccurrenciesMap);
+
+    // Then
+    assertThat(outputFilePath).isEqualTo("outputDir/studentName.pdf");
   }
 
   @SneakyThrows
@@ -89,28 +306,28 @@ class CertificateCreatorTest {
     TableContent tableContent = createTableContentWithoutMetadataNames();
     prepareMocks();
     doReturn(tableContent).when(tableContentFileParser)
-        .parse(certificateFileLocations.certificateInfoFilePath());
+        .parse(certificateFileConfiguration.certificateInfoFilePath());
 
     // When
-    certificateCreator.create(certificateFileLocations);
+    certificateCreator.create(certificateFileConfiguration);
 
     // Then
-    verify(tableContentFileParser).parse(certificateFileLocations.certificateInfoFilePath());
+    verify(tableContentFileParser).parse(certificateFileConfiguration.certificateInfoFilePath());
     verify(certificateCreator, times(3)).createJasperPrint(any(), hashMapCaptor.capture());
     verify(certificateCreator, times(3)).exportToPdf(eq(jasperPrint), stringCaptor.capture());
 
     verifyParametersMapWithoutMetadataNames(hashMapCaptor.getAllValues());
 
     assertThat(stringCaptor.getAllValues()).contains(
-        "outputDir/fileresult1.pdf",
-        "outputDir/fileresult2.pdf",
-        "outputDir/fileresult3.pdf"
+        "outputDir/certfilename.pdf",
+        "outputDir/certfilename_2.pdf",
+        "outputDir/certfilename_3.pdf"
     );
   }
 
-  private CertificateFileLocations createCertificateFileLocations() {
-    return new CertificateFileLocations("jasperFilePath",
-        "certificateInfoFilePath", "outputDir");
+  private CertificateFileConfiguration createCertificateFileConfiguration() {
+    return new CertificateFileConfiguration("jasperFilePath",
+        "certificateInfoFilePath", "outputDir", "certfilename");
   }
 
   private TableContent createTableContent() {
@@ -196,7 +413,7 @@ class CertificateCreatorTest {
   private void prepareMocks() {
     doReturn(jasperStream)
         .when(certificateCreator)
-        .createJasperInputStream(certificateFileLocations.jasperTemplateFilePath());
+        .createJasperInputStream(certificateFileConfiguration.jasperTemplateFilePath());
     doReturn(jasperReport).when(certificateCreator).loadJasperReportByStream(jasperStream);
   }
 
@@ -237,5 +454,26 @@ class CertificateCreatorTest {
     assertThat(actualParametersMap.get(0)).containsAllEntriesOf(expectedMap0);
     assertThat(actualParametersMap.get(1)).containsAllEntriesOf(expectedMap1);
     assertThat(actualParametersMap.get(2)).containsAllEntriesOf(expectedMap2);
+  }
+
+  private Map<String, Object> createStudentMap() {
+    return Map.of(
+        "programName", "Potencialize com a Metodologia CliftonStrengths",
+        "durationHours", "8 horas",
+        "programDate", "20 de Março de 2025",
+        "studentName", "Linus Torvalds"
+    );
+  }
+
+  private Map<String, Object> createBadgeTalentMap() {
+    return Map.of(
+        "firstName", "Kurt",
+        "lastName", "Cobain",
+        "talent1", "Grunge",
+        "talent2", "Nirvana",
+        "talent3", "Punk",
+        "talent4", "Himself",
+        "talent5", "Not one else"
+    );
   }
 }

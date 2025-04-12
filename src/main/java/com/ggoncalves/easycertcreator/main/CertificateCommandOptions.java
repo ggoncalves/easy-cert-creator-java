@@ -23,6 +23,7 @@ public class CertificateCommandOptions {
     commandProcessor
         .addRequiredOption("c", "jasperfile", true, "Compiled Jasper Template File")
         .addRequiredOption("i", "infofile", true, "File with data in supported format (LIST or SIMPLE structure, auto-detected)")
-        .addRequiredOption("o", "output", true, "Output directory to save .pdf files");
+        .addRequiredOption("o", "output", true, "Output directory to save .pdf files")
+        .addOption("name", "filename", true, "File name to use for generated .pdf files");
   }
 }

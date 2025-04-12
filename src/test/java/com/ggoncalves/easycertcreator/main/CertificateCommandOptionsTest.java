@@ -63,6 +63,7 @@ class CertificateCommandOptionsTest {
     verify(commandProcessor).addRequiredOption(eq("c"), anyString(), eq(true), anyString());
     verify(commandProcessor).addRequiredOption(eq("i"), anyString(), eq(true), anyString());
     verify(commandProcessor).addRequiredOption(eq("o"), anyString(), eq(true), anyString());
+    verify(commandProcessor).addOption(eq("name"), anyString(), eq(true), anyString());
     verifyNoMoreInteractions(commandProcessor);
   }
 }
